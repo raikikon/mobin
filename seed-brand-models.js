@@ -13,8 +13,8 @@ const axios = require("axios");
 /* =========================
    MONGODB
 ========================= */
-const MONGO_URI =
-  "mongodb+srv://mobiledms:vkmobiles@mobiledms.ocoebxi.mongodb.net/?appName=MobileDMS";
+const MONGO_URI =process.env.MONGO_URI;
+ 
 
 mongoose
   .connect(MONGO_URI)
