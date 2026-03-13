@@ -10,9 +10,7 @@ require("dotenv").config();
 
 // 🔹 MongoDB connection
 const MONGO_URI =process.env.MONGO_URI;
-  //"mongodb+srv://raikikon:9smZ4lbN56QWEKYx@cashomobile.6mmsuje.mongodb.net/?appName=CashoMobile";
-//mongodb+srv://raikikon:9smZ4lbN56QWEKYx@cashomobile.6mmsuje.mongodb.net/?appName=CashoMobile
-//mongodb+srv://mobiledms:vkmobiles@mobiledms.ocoebxi.mongodb.net/?appName=MobileDMS
+
 async function seedUser() {
   try {
     await mongoose.connect(MONGO_URI);
