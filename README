@@ -1,0 +1,19 @@
+backend/
+├── server.js
+├── config/
+│   └── db.js
+├── models/
+│   ├── User.js 
+│   ├── Brand.js
+│   ├── MobileModel.js
+│   ├── Mobile.js
+│   └── SoldMobile.js
+├── middleware/
+│   ├── auth.js
+│   └── admin.js
+├── routes/
+│   ├── auth.js
+│   ├── brand.js
+│   ├── model.js
+│   └── mobile.js
+└── package.json
