@@ -18,7 +18,11 @@ module.exports = mongoose.model(
     imei1: String,
     imei2: String,
     serialNumber: String,
-
+images: [
+  {
+    type: String
+  }
+],
     seller: {
       name: String,
       address: String,

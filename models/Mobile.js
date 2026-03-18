@@ -15,6 +15,12 @@ module.exports = mongoose.model(
     ram: String,       // e.g. "8 GB"
     color: String,
 
+    /* 🔹 DEVICE IMAGES */
+    images: [
+      {
+        type: String
+      }
+    ],
        /* 🔹 ACCESSORIES (✅ FIX) */
     accessories: {
       charger: { type: Boolean, default: false },

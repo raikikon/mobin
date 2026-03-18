@@ -4,11 +4,25 @@ const SoldMobile = require("../models/SoldMobile");
 const auth = require("../middleware/auth");
 const History = require("../models/History");
 const logActivity = require("../utils/logActivity");
+const multer = require("multer");
+const upload = multer(); // memory storage
+const uploadImageToHost = require("../utils/uploadImage");
+
 /* =======================
    BUY MOBILE
 ======================= */
-router.post("/mobile/buy", auth, async (req, res) => {
-  const mobile = await Mobile.create({
+router.post("/mobile/buy", auth, upload.array("images"), async (req, res) => 
+  {  
+    let imageUrls = [];
+
+if (req.files && req.files.length > 0) {
+  for (const file of req.files) {
+    const url = await uploadImageToHost(file.buffer, file.originalname);
+    imageUrls.push(url);
+  }
+}
+    
+    const mobile = await Mobile.create({
     make: req.body.make,
     model: req.body.model,
     imei1: req.body.imei1,
@@ -18,6 +32,7 @@ router.post("/mobile/buy", auth, async (req, res) => {
     ram: req.body.ram,
     color: req.body.color,
     accessories: req.body.accessories,
+      images: imageUrls,   // ✅ ADD THIS
     seller: {
       ...req.body.seller,
       purchaseDate: req.body.seller?.purchaseDate || new Date()
@@ -86,43 +101,96 @@ router.get("/mobile/:id", auth, async (req, res) => {
 /* =======================
    EDIT MOBILE
 ======================= */
-router.post("/mobile/:id/edit", auth, async (req, res) => {
-  const mobile = await Mobile.findById(req.params.id);
-  if (!mobile)
-    return res.status(404).json({ error: "Mobile not found" });
 
-  const before = mobile.toObject();
+router.post("/mobile/:id/edit", auth, upload.array("images"),async (req, res) => {
+    try {
+      const mobile = await Mobile.findById(req.params.id);
+      if (!mobile)
+        return res.status(404).json({ error: "Mobile not found" });
 
-  // Editable fields
-  mobile.make = req.body.make;
-  mobile.model = req.body.model;
-  mobile.imei2 = req.body.imei2;
-  mobile.serialNumber = req.body.serialNumber;
-  mobile.seller = req.body.seller;
-  mobile.accessories = req.body.accessories;
-  mobile.color = req.body.color;
-  mobile.ram=req.body.ram;
-  mobile.storage=req.body.storage;
+      const before = mobile.toObject();
 
+      /* 🔹 PARSE JSON FIELDS SAFELY */
+      const seller = req.body.seller
+  ? typeof req.body.seller === "string"
+    ? JSON.parse(req.body.seller)
+    : req.body.seller
+  : mobile.seller;
 
+const accessories = req.body.accessories
+  ? typeof req.body.accessories === "string"
+    ? JSON.parse(req.body.accessories)
+    : req.body.accessories
+  : mobile.accessories;
 
-  mobile.history.push({
-    action: "EDITED",
-    details: {
-      before,
-      after: req.body
+      /* 🔹 STEP 1: HANDLE IMAGE DELETE */
+      let updatedImages = mobile.images || [];
+
+      if (req.body.imagesToDelete) {
+        const imagesToDelete =
+  typeof req.body.imagesToDelete === "string"
+    ? JSON.parse(req.body.imagesToDelete)
+    : req.body.imagesToDelete;
+
+        updatedImages = updatedImages.filter(
+          (img) => !imagesToDelete.includes(img)
+        );
+      }
+
+      /* 🔹 STEP 2: UPLOAD NEW IMAGES */
+      if (req.files && req.files.length > 0) {
+        for (const file of req.files) {
+          const url = await uploadImageToHost(
+            file.buffer,
+            file.originalname
+          );
+          updatedImages.push(url);
+        }
+      }
+
+      /* 🔹 STEP 3: UPDATE FIELDS (SAFE UPDATE) */
+      mobile.make = req.body.make ?? mobile.make;
+      mobile.model = req.body.model ?? mobile.model;
+      mobile.imei2 = req.body.imei2 ?? mobile.imei2;
+      mobile.serialNumber = req.body.serialNumber ?? mobile.serialNumber;
+
+      mobile.color = req.body.color ?? mobile.color;
+      mobile.ram = req.body.ram ?? mobile.ram;
+      mobile.storage = req.body.storage ?? mobile.storage;
+
+      mobile.seller = seller;
+      mobile.accessories = accessories;
+
+      mobile.images = updatedImages;
+
+      /* 🔹 HISTORY TRACK */
+      mobile.history.push({
+        action: "EDITED",
+        date: new Date(),
+        details: {
+          before,
+          after: {
+            ...req.body,
+            images: updatedImages
+          }
+        }
+      });
+
+      await logActivity({
+        action: "MOBILE_EDITED",
+        mobile,
+        user: req.user
+      });
+
+      await mobile.save();
+
+      res.json(mobile);
+    } catch (err) {
+      console.error("Edit Mobile Error:", err);
+      res.status(500).json({ error: err.message });
     }
-  });
-
-  await logActivity({
-    action: "MOBILE_EDITED",
-    mobile,
-    user: req.user
-  });
-
-  await mobile.save();
-  res.json(mobile);
-});
+  }
+);
 
 /* SOLD BY DATE (YYYY-MM-DD) */
 router.get("/mobile/sold/:date", auth, async (req, res) => {
@@ -248,7 +316,7 @@ router.post("/mobile/:id/repair/back-to-shelf", auth, async (req, res) => {
    SELL MOBILE
 ======================= */
 router.post("/mobile/:id/sell", auth, async (req, res) => {
-  const mobile = await Mobile.findById(req.params.id);
+  const mobile = await Mobile.findById(req.params.id); //fetch mnobile 
   if (!mobile)
     return res.status(404).json({ error: "Mobile not found" });
 
@@ -264,6 +332,7 @@ router.post("/mobile/:id/sell", auth, async (req, res) => {
   serialNumber: mobile.serialNumber,
   seller: mobile.seller,
   buyer: req.body.buyer,
+  images: mobile.images,   // ✅ TRANSFER IMAGES
   soldAt: new Date()
 });
 
