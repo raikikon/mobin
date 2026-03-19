@@ -21,7 +21,15 @@ if (req.files && req.files.length > 0) {
     imageUrls.push(url);
   }
 }
-    
+    const seller =
+  typeof req.body.seller === "string"
+    ? JSON.parse(req.body.seller)
+    : req.body.seller || {};
+
+seller.purchaseDate = seller.purchaseDate
+  ? new Date(seller.purchaseDate)
+  : new Date();
+
     const mobile = await Mobile.create({
     make: req.body.make,
     model: req.body.model,
@@ -33,10 +41,7 @@ if (req.files && req.files.length > 0) {
     color: req.body.color,
     accessories: req.body.accessories,
       images: imageUrls,   // ✅ ADD THIS
-    seller: {
-      ...req.body.seller,
-      purchaseDate: req.body.seller?.purchaseDate || new Date()
-    },
+      seller: seller,   // ✅ FIXED
     status: "ON_SHELF",
     history: [{ action: "BOUGHT", details: req.body }]
   });
@@ -158,7 +163,16 @@ const accessories = req.body.accessories
       mobile.ram = req.body.ram ?? mobile.ram;
       mobile.storage = req.body.storage ?? mobile.storage;
 
-      mobile.seller = seller;
+              const sellerData = {
+          ...mobile.seller,
+          ...seller
+        };
+
+        if (seller.purchaseDate) {
+          sellerData.purchaseDate = new Date(seller.purchaseDate);
+        }
+
+      mobile.seller = sellerData;
       mobile.accessories = accessories;
 
       mobile.images = updatedImages;
