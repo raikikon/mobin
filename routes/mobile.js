@@ -278,27 +278,70 @@ router.post("/mobile/:id/delete", auth, async (req, res) => {
 /* =======================
    SEND TO REPAIR
 ======================= */
+// router.post("/mobile/:id/repair", auth, async (req, res) => {
+//   const mobile = await Mobile.findById(req.params.id);
+//   if (!mobile)
+//     return res.status(404).json({ error: "Mobile not found" });
+
+//   mobile.status = "REPAIR";
+//   mobile.repairInfo = {
+//     ...req.body,
+//     sentAt: new Date()   // ✅ ADD THIS
+//   };  mobile.history.push({ action: "REPAIR_SENT", details: req.body });
+
+// await logActivity({
+//     action: "MOBILE_SENT_TO_REPAIR",
+//     mobile,
+//     user: req.user
+//   });
+
+//   await mobile.save();
+//   res.json(mobile);
+// });
 router.post("/mobile/:id/repair", auth, async (req, res) => {
-  const mobile = await Mobile.findById(req.params.id);
-  if (!mobile)
-    return res.status(404).json({ error: "Mobile not found" });
+  try {
+    const mobile = await Mobile.findById(req.params.id);
 
-  mobile.status = "REPAIR";
-  mobile.repairInfo = {
-    ...req.body,
-    sentAt: new Date()   // ✅ ADD THIS
-  };  mobile.history.push({ action: "REPAIR_SENT", details: req.body });
+    if (!mobile)
+      return res.status(404).json({ error: "Mobile not found" });
 
-await logActivity({
-    action: "MOBILE_SENT_TO_REPAIR",
-    mobile,
-    user: req.user
-  });
+    /* 🔹 HANDLE DATE */
+    let sentAt = req.body.sentAt
+      ? new Date(req.body.sentAt)
+      : new Date();
 
-  await mobile.save();
-  res.json(mobile);
+    // Optional validation
+    if (isNaN(sentAt.getTime())) {
+      return res.status(400).json({ error: "Invalid sentAt date" });
+    }
+
+    mobile.status = "REPAIR";
+
+    mobile.repairInfo = {
+      ...req.body,
+      sentAt   // ✅ USE USER DATE OR DEFAULT
+    };
+
+    mobile.history.push({
+      action: "REPAIR_SENT",
+      date: new Date(),
+      details: mobile.repairInfo
+    });
+
+    await logActivity({
+      action: "MOBILE_SENT_TO_REPAIR",
+      mobile,
+      user: req.user
+    });
+
+    await mobile.save();
+
+    res.json(mobile);
+  } catch (err) {
+    console.error("Repair Error:", err);
+    res.status(500).json({ error: err.message });
+  }
 });
-
 
 /* =======================
    REPAIR → BACK TO SHELF
