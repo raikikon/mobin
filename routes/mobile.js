@@ -43,7 +43,7 @@ seller.purchaseDate = seller.purchaseDate
       images: imageUrls,   // ✅ ADD THIS
       seller: seller,   // ✅ FIXED
     status: "ON_SHELF",
-    history: [{ action: "BOUGHT", details: req.body }]
+    history: [{ action: "BOUGHT",date:seller.purchaseDate, details: req.body }]
   });
 
   await logActivity({

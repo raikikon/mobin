@@ -52,7 +52,7 @@ module.exports = mongoose.model(
     history: [
       {
         action: String,
-        date: { type: Date, default: Date.now },
+        date: Date,
         details: Object
       }
     ]
