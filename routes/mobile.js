@@ -180,7 +180,7 @@ const accessories = req.body.accessories
       /* 🔹 HISTORY TRACK */
       mobile.history.push({
         action: "EDITED",
-        date: new Date(),
+        date: new Date(seller.purchaseDate),
         details: {
           before,
           after: {
