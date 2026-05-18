@@ -24,7 +24,9 @@ module.exports = mongoose.model(
        /* 🔹 ACCESSORIES (✅ FIX) */
     accessories: {
       charger: { type: Boolean, default: false },
-      box: { type: Boolean, default: false }
+      box: { type: Boolean, default: false },
+      dataCable:{type: Boolean, default: false}
+
     },
 
     /* 🔹 SELLER DETAILS */
